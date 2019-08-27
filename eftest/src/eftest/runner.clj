@@ -86,19 +86,17 @@
         each-fixtures (-> ns meta ::test/each-fixtures test/join-fixtures)
         test-var      (-> (fn [v]
                             (when-not (and fail-fast? (failed-test?))
-                              (binding [report/*testing-path* [ns ::test/each-fixtures]]
-                                (try
-                                  (each-fixtures
-                                    (if capture-output?
-                                      #(binding [test/report report
-                                                 report/*testing-path* [ns v]]
-                                          (capture/with-test-buffer
-                                            (test/test-var v)))
-                                      #(binding [test/report report
-                                                 report/*testing-path* [ns v]]
-                                          (test/test-var v))))
-                                  (catch Throwable t
-                                    (test/do-report (fixture-exception t)))))))
+                              (set! report/*testing-path* [ns ::test/each-fixtures])
+                              (try
+                                (each-fixtures
+                                 (binding [test/report report]
+                                   (set! report/*testing-path* [ns v])
+                                   (if capture-output?
+                                     #(capture/with-test-buffer
+                                        (test/test-var v))
+                                     #(test/test-var v))))
+                                (catch Throwable t
+                                  (test/do-report (fixture-exception t))))))
                           (wrap-test-with-timer test-warn-time))]
     (binding [report/*testing-path* [ns ::test/once-fixtures]]
       (try
